@@ -2,9 +2,9 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const bot = new Telegraf(Token);
 const CHANNEL_ID = '-1002178908288';
-const name_CHANNEL_ID = '@BSSmaker; // Изменено на строку, чтобы сравнивать с именем канала
+const name_CHANNEL_ID = '@BSSmaker'; // Изменено на строку, чтобы сравнивать с именем канала
 
-const ADMIN_ID = ['5942916457', '7165286219'];
+const ADMIN_ID = '7165286219';
 
 bot.command('settings', async (ctx) => {
   if (isAdmin(ctx)) {
@@ -92,18 +92,6 @@ async function checkSubscription(ctx) {
   }
 }
 
-const startMenuKeyboard = Markup.keyboard([
-  ['/start']
-]).resize();
-
-const mainMenuKeyboard = Markup.keyboard([
-  ['Я соглашаюсь✅!']
-]).resize();
-
-const adminMenuKeyboard = Markup.keyboard([
-  ['Я соглашаюсь✅!', 'Список пользователей']
-]).resize();
-
 bot.start(async (ctx) => {
   const commandText = ctx.message.text;
   const referrer = commandText.split('/start ')[1]; // Получаем имя пользователя, который пригласил
@@ -120,55 +108,40 @@ bot.start(async (ctx) => {
     return ctx.reply(
       'Пожалуйста, подпишитесь на канал @BSSmaker и нажмите на кнопку ниже для проверки!',
       Markup.inlineKeyboard([
-        Markup.button.callback('Я подписался!✅', 'check_subscription')
-      ])
-    );
-  }
-  if (isAdmin(ctx)) {
-    ctx.reply('Добро пожаловать в нашего бота, админ!', adminMenuKeyboard);
-    ctx.reply(
-      'Выберите одну из множества кнопок:',
-      Markup.inlineKeyboard([
-        [
-          Markup.button.url('Кнопка 1', 'https://www.example1.com'),
-          Markup.button.url('Кнопка 2', 'https://www.example2.com'),
-        ],
-        [
-          Markup.button.url('Кнопка 3', 'https://www.example3.com'),
-          Markup.button.url('Кнопка 4', 'https://www.example4.com')
-        ],
-        [Markup.button.url('Кнопка 5', 'https://www.example5.com')],
-        // ... Добавьте столько строк кнопок, сколько вам нужно
+        Markup.button.callback('Я подписался!', 'check_subscription')
       ])
     );
   } else {
-    ctx.reply('Условия:\n\nВы соглашаетесь тем что мы  можем отобрать у вас баланс/статус\n\nВы соглашаетесь с тем что не будет возврата при покупке.', mainMenuKeyboard);
+    ctx.reply(
+      'Приветсую! Что вы хотите сделать?',
+      Markup.inlineKeyboard([
+        [
+          Markup.button.callback('Test', 'test_button')
+        ]
+    );
   }
 });
 
 bot.action('check_subscription', async (ctx) => {
   if (await checkSubscription(ctx)) {
     await ctx.answerCbQuery('Спасибо за подписку!');
-    await ctx.reply('Перезапустите бота /start', startMenuKeyboard);
+    await ctx.reply('Перезапустите бота /start');
   } else {
     await ctx.answerCbQuery('Вы все еще не подписаны!');
   }
 });
 
-bot.hears('Создатель', async (ctx) => {
-  if (await checkSubscription(ctx)) {
-    ctx.reply('Создатель: @OrigNekit');
+bot.action('test_button', async (ctx) => {
+  if (await isAdmin(ctx)) {
+    await ctx.answerCbQuery('Вы админ!');
+    await ctx.edit('Админ!')
+  } else if (await checkSubscription(ctx)) {
+    await ctx.answerCbQuery('Тест!')
+    await ctx.edit('Пользователь подписан!')
+  } else {
+    await ctx.reply('Вы не подписаны!')
   }
-});
-
-bot.hears('Я соглашаюсь✅!', async (ctx) => {
-  if (await checkSubscription(ctx)) {
-    // Отправляем клавиатуру для запроса контактной информации
-    ctx.reply("Пожалуйста, отправьте ваш номер телефона:", Markup.keyboard([
-      Markup.button.contactRequest('Отправить мой номер')
-    ]).resize());
-  }
-});
+})
 
 bot.on('contact', (ctx) => {
   const userId = ctx.from.id;
@@ -179,7 +152,7 @@ bot.on('contact', (ctx) => {
   fs.appendFileSync('number.txt', `${userId} (${userName}): ${phoneNumber}\n`);
 
   // После сохранения информации, отправляем пользователю благодарность или другое сообщение
-  ctx.reply("Спасибо за предоставленную информацию!", mainMenuKeyboard);  // возвращаем основную клавиатуру
+  ctx.reply(".");  // возвращаем основную клавиатуру
 });
 
 
